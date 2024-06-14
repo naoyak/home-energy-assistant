@@ -4,8 +4,13 @@ import pandas as pd
 import altair as alt
 
 # Page title
-st.set_page_config(page_title='Interactive Data Explorer', page_icon='📊')
-st.title('📊 Interactive Data Explorer')
+st.set_page_config(
+    page_title="Home Energy Copilot",
+    page_icon="⚡️",
+    layout="wide",
+)
+st.title('📊 Home Energy Usage Copilot')
+st.subheader('An interactive dashboard to explore your home energy usage and emissions impact')
 
 with st.expander('About this app'):
   st.markdown('**What can this app do?**')
@@ -14,6 +19,22 @@ with st.expander('About this app'):
   st.warning('To engage with the app, 1. Select genres of your interest in the drop-down selection box and then 2. Select the year duration from the slider widget. As a result, this should generate an updated editable DataFrame and line plot.')
   
 st.subheader('Which Movie Genre performs ($) best at the box office?')
+
+ppl_net = (
+  pd.read_csv('data/ppl_net.csv', parse_dates=[['date', 'time']]
+              
+              )
+)
+
+# ppl_net['date'] = pd.to_datetime(ppl_net[['date', 'time']])
+ppl_editor = st.data_editor(ppl_net)
+ppl_chart = alt.Chart(ppl_net).mark_line().encode(
+  x=alt.X('date_time:T', title='date'),
+  y=alt.Y('kWh:Q', title='kWh')
+).properties(width=800, height=400
+)
+st.altair_chart(ppl_chart, use_container_width=True)
+
 
 # Load data
 df = pd.read_csv('data/movies_genres_summary.csv')
@@ -26,7 +47,7 @@ genres_selection = st.multiselect('Select genres', genres_list, ['Action', 'Adve
 
 ## Year selection
 year_list = df.year.unique()
-year_selection = st.slider('Select year duration', 1986, 2006, (2000, 2016))
+year_selection = st.slider('Select year duration', 1986, 2024, (2000, 2024))
 year_selection_list = list(np.arange(year_selection[0], year_selection[1]+1))
 
 df_selection = df[df.genre.isin(genres_selection) & df['year'].isin(year_selection_list)]
