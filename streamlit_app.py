@@ -29,7 +29,7 @@ st.subheader('When is the best time to save electricity?')
 # year_selection = st.slider()'Select year duration', 1986, 2024, (2000, 2024))
 
 ppl_net = (
-  pd.read_csv('data/ppl_net.csv')
+  pd.read_csv('data/consumed.csv')
 )
 ppl_net['timestamp'] = pd.to_datetime(
   ppl_net['date'].astype(str).str.slice(stop=10) + ' ' + ppl_net['time'].astype(str).str.slice(stop=8))
