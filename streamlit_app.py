@@ -19,6 +19,7 @@ st.set_page_config(
 )
  
 st.image('ecowatt_logo.webp', width=300)
+st.header('EcoWatt')
 st.subheader('An interactive dashboard to explore your home energy usage and emissions impact')
 
 with st.expander('About this app'):
