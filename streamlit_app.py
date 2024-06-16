@@ -216,17 +216,35 @@ with tab3:
 alerts = st.container(border=True)
 with alerts:
   st.header("Alerts")
-  st.info("You have saved 10% more energy than last month.")
-  st.warning("Your carbon emissions are 5% higher than last week.")
-  st.success("Your electricity costs are 15% lower than last week.")
+
 
 
 for i in range(len(ppl_future)):
   time.sleep(1)
-  
+
   usage_chart.update_data(ppl_future.iloc[i:i+1])
   cost_chart.update_data(costs_future.iloc[i:i+1])
   emissions_chart.update_data(carbon_future.iloc[i:i+1])
+
+  with alerts:
+    
+    # print(usage_chart.data.index[-1])
+    latest_usage = usage_chart.data.iloc[-1]
+  
+    if latest_usage['value'] > 2.4 and usage_chart.data.index[-1].hour >= 15 and usage_chart.data.index[-1].hour < 19:
+      st.warning("💰💰 Savings alert (Time of Use Rate): High energy usage detected during peak hours! Cut down on usage to save costs and reduce emissions.", icon="💰")
+    
+    latest_carbon = emissions_chart.data.iloc[-4:]
+    if latest_carbon['value'].sum() > 2.0:
+      st.warning("""🔥🔥 Emissions alert: High carbon emissions detected!
+                 Consider shifting your usage to off-peak to reduce your carbon footprint.""", icon="🍃")
+    # remove latest st.warning
+  
+
+
+
+
+
 # Load data
 # df = pd.read_csv('data/movies_genres_summary.csv')
 # df.year = df.year.astype('int')
