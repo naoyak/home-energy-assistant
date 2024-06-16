@@ -12,11 +12,12 @@ from watttime import WattTimeMyAccess, WattTimeHistorical, WattTimeForecast
 
 # Page title
 st.set_page_config(
-    page_title="Home Energy Copilot",
+    page_title="EcoWatt",
     page_icon="⚡️",
     layout="wide",
 )
-st.title('📊 Home Energy Usage Copilot')
+ 
+st.image('ecowatt_logo.webp', width=300)
 st.subheader('An interactive dashboard to explore your home energy usage and emissions impact')
 
 with st.expander('About this app'):
@@ -27,30 +28,32 @@ with st.expander('About this app'):
   
 st.subheader('When is the best time to save electricity?')
 
-ppl_net = (
-  pd.read_csv('data/consumed.csv')
-)
-ppl_net['timestamp'] = pd.to_datetime(
-  ppl_net['date'].astype(str).str.slice(stop=10) + ' ' + ppl_net['time'].astype(str).str.slice(stop=8))
-ppl_net = ppl_net[['timestamp', 'kWh']]
+# ppl_net = (
+#   pd.read_csv('data/consumed.csv')
+# )
+# ppl_net['timestamp'] = pd.to_datetime(
+#   ppl_net['date'].astype(str).str.slice(stop=10) + ' ' + ppl_net['time'].astype(str).str.slice(stop=8))
+# ppl_net = ppl_net[['timestamp', 'kWh']]
 
+ppl_net = (
+  pd.read_csv('data/consumption.csv', index_col='timestamp', parse_dates=True))
 
 
 # Generate a forecast of the time series data in `ppl_net` using the ARIMA model
-forecast = ARIMA(ppl_net['kWh'], order=(5, 1, 0)).fit()
+# forecast = ARIMA(ppl_net['kWh'], order=(5, 1, 0)).fit()
 
 
-forecast_data = forecast.predict(start=0, end=4 * 24 * 90, typ='levels')
-forecast_data = pd.DataFrame(
-  {
-    'kWh': forecast_data.values,
-    'timestamp': pd.date_range( 
-      start=ppl_net.timestamp.iloc[-1] + pd.Timedelta('15min'),
-      periods=len(forecast_data),
-      freq='15min')
-  }
-)
-forecast_data.to_csv('data/forecast.csv', index=False)
+# forecast_data = forecast.predict(start=0, end=4 * 24 * 90, typ='levels')
+# forecast_data = pd.DataFrame(
+#   {
+#     'kWh': forecast_data.values,
+#     'timestamp': pd.date_range( 
+#       start=ppl_net.timestamp.iloc[-1] + pd.Timedelta('15min'),
+#       periods=len(forecast_data),
+#       freq='15min')
+#   }
+# )
+# forecast_data.to_csv('data/forecast.csv', index=False)
 
 # ppl_net = ppl_net[ppl_net.timestamp > today datetime.datetime(2024, 4, 1)]
 
@@ -70,28 +73,23 @@ first_day_current_month = current_date.replace(day=1)
 first_day_last_month = (first_day_current_month - pd.DateOffset(months=1))
 
 # Step 4: Filter the DataFrame for the last month
-ppl_net_last_month = ppl_net[(ppl_net['timestamp'] >= first_day_last_month) & (ppl_net['timestamp'] < first_day_current_month)]
-ppl_peaks, _ = scipy.signal.find_peaks(ppl_net_last_month['kWh'], height=1, width=3)
-peak_rows = ppl_net_last_month.iloc[ppl_peaks]
+# ppl_net_last_month = ppl_net[(ppl_net['timestamp'] >= first_day_last_month) & (ppl_net['timestamp'] < first_day_current_month)]
+ppl_peaks, _ = scipy.signal.find_peaks(ppl_net['value'], height=1, width=3)
+peak_rows = ppl_net.iloc[ppl_peaks]
+# print(ppl_peaks)
 # 
-# ppl_net_last_month['rolling_sum_4'] = ppl_net_last_month['kWh'].rolling(window=4).sum()
 
-# ppl_net['date'] = pd.to_datetime(ppl_net[['date', 'time']])
-# ppl_editor = st.data_editor(ppl_net_last_month)
+# wt_hist = WattTimeHistorical(
 
 
+# ).get_historical_pandas(
+#   start=datetime.datetime.now() - datetime.timedelta(days=7),
+#   end=datetime.datetime.now(),
+#   region='CAISO_NORTH',
 
-wt_hist = WattTimeHistorical(
+#   signal_type='co2_moer', ).set_index('point_time').resample('15min').max().reset_index()
 
-
-).get_historical_pandas(
-  start=datetime.datetime.now() - datetime.timedelta(days=7),
-  end=datetime.datetime.now(),
-  region='CAISO_NORTH',
-
-  signal_type='co2_moer', ).set_index('point_time').resample('15min').max().reset_index()
-
-
+wt_hist = pd.read_csv('data/emissions.csv')
 
 tab1, tab2, tab3 = st.tabs(["⚡️Usage", "💰Costs", "🔥Carbon"])
 
@@ -110,13 +108,51 @@ electricity_rates_df = pd.DataFrame({
 
 
 from util.charting import TimeSeriesChartModule 
-
+import time
 with tab1:
+  ppl_past = ppl_net[
+    (ppl_net.index > datetime.datetime.today() - datetime.timedelta(days=1)) &
+    (ppl_net.index < datetime.datetime.today())]
+  ppl_future = ppl_net[ppl_net.index >= datetime.datetime.today()]
+  
+  # main_chart_1 = st.container(border=True)
+  # with main_chart_1:
   main_chart_1 = st.container(border=True)
   with main_chart_1:
     st.header("Usage")
-    usage_chart = TimeSeriesChartModule(ppl_net_last_month, 'timestamp', 'kWh', main_chart_1)
+    c = st.empty()
 
+    with c.container():
+    
+      usage_chart = TimeSeriesChartModule(c, ppl_past, 24 * 4, None, 'value')
+      # Add annotations for peaks
+      # for index, row in peak_rows.iterrows():
+      #     fig.add_annotation(x=row['timestamp'], y=row['kWh'],
+      #                       text=str(row['kWh']),
+      #                       showarrow=True, arrowhead=1, ax=0, ay=-40,
+      #                       bgcolor="red", font=dict(color="white"))
+      # print('hi')
+      for i in range(len(ppl_future)):
+        time.sleep(1)
+        
+        usage_chart.update_data(ppl_future.iloc[i:i+1])
+      
+      # for t in range(200):
+      #   time.sleep(1)
+      #   usage_chart.forecast(1)
+      #   c.empty()
+      #   usage_chart.plot()
+      # time.sleep(5)
+      # c.empty()
+    # main_chart_1.empty()
+
+  # for seconds in range(200):
+  #   usage_chart.forecast(1)
+  #   with main_chart_1.empty():
+  #     usage_chart.plot()
+    # st.write(f"Forecasting {seconds+1} steps into the future...")
+    # st.write(f"Forecasted value: {forecast_data.iloc[-1]['kWh']:.2f} kWh")
+    # st.write(f"Forecasted time: {forecast_data.iloc[-1]['timestamp']}")
 
   # Create the line chart using Plotly Express
   # fig = px.line(ppl_net_last_month, x='timestamp', y='kWh', title='Electricity usage over the last month', labels={'timestamp': 'Date', 'kWh': 'kWh'})
@@ -178,11 +214,11 @@ with tab1:
 with tab2:
   with st.container(border=True):
     st.header("Costs")
-    costs = ppl_net_last_month.copy().set_index('timestamp').resample('h').sum().reset_index()
+    costs = ppl_past.copy().resample('h').sum().reset_index()
     costs['hour'] = costs['timestamp'].dt.hour
     
     costs = costs.merge(electricity_rates_df, on='hour')
-    costs['net_cost'] = costs['kWh'] * costs['rate_usd_per_kwh']
+    costs['net_cost'] = costs['value'] * costs['rate_usd_per_kwh']
     
     fig = px.line(costs, x='timestamp', y='net_cost', labels={'net_cost': 'Cost'}, title='Electricity costs over the last month')
 
@@ -196,8 +232,6 @@ with tab2:
   with col1:
     with st.container(border=True):
       st.subheader("Today")
-      
-      
       
       # Calculate the total cost for the last 24 hours only
       cost_24h = costs['net_cost'].tail(24).sum()
@@ -218,7 +252,7 @@ with tab2:
 with tab3:
   st.header("Carbon emissions")
     
-  fig = px.line(wt_hist, x='point_time', y='value', labels={'value': 'lbs/MWh'}, title='Marginal carbon emissions over the last month')
+  fig = px.line(wt_hist, x='timestamp', y='value', labels={'value': 'lbs/MWh'}, title='Marginal carbon emissions over the last month')
 
   # Display the figure in Streamlit
   st.plotly_chart(fig, use_container_width=False)
