@@ -70,7 +70,7 @@ class TimeSeriesChartModule:
                     self.y_column: forecast
                     }
         )
-                    
+                   
         self.update_data(forecast_data)
         # Add the forecast data to the existing dataset
         # self.data = pd.concat([self.data, forecast_data]).tail(len(self.data))

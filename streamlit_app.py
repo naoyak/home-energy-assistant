@@ -111,11 +111,16 @@ electricity_rates_df = pd.DataFrame({
 
 from util.charting import TimeSeriesChartModule 
 
+def split_data(data, days_back):
+  today = datetime.datetime.today()
+  past = data[
+    (data.index > today - datetime.timedelta(days=days_back)) &
+    (data.index < today)]
+  future = data[data.index >= today]
+  return past, future
+
 with tab1:
-  ppl_past = ppl_net[
-    (ppl_net.index > datetime.datetime.today() - datetime.timedelta(days=1)) &
-    (ppl_net.index < datetime.datetime.today())]
-  ppl_future = ppl_net[ppl_net.index >= datetime.datetime.today()]
+  ppl_past, ppl_future = split_data(ppl_net, 1)
   
   # main_chart_1 = st.container(border=True)
   # with main_chart_1:
@@ -134,23 +139,20 @@ with tab1:
 with tab2:
   main_chart_2 = st.container(border=True)
   with main_chart_2:
-    st.header("Costs")
+    st.header("Bill Spending")
     c = st.empty()
   # with st.container(border=True):
   #   st.header("Costs")
   #   st.write("Electricity costs over the last month")
     with c.container():
-      costs = ppl_net.copy().resample('h').sum().reset_index()
+      costs = ppl_net.copy().reset_index()
 
       costs['hour'] = costs['timestamp'].dt.hour
-      costs = costs.merge(electricity_rates_df, on='hour')
+      costs = costs.merge(electricity_rates_df, on='hour',)
       costs['value'] = costs['value'] * costs['rate_usd_per_kwh']
       costs = costs[['timestamp', 'value']].set_index('timestamp')
-      cost_chart = TimeSeriesChartModule(c, costs, 24, '$', None, 'value')
-
-    
-
-    
+      costs_past, costs_future = split_data(costs, 1)
+      cost_chart = TimeSeriesChartModule(c, costs_past, 24 * 4, '$', None, 'value')
     
   #   costs = costs.merge(electricity_rates_df, on='hour')
     
@@ -185,14 +187,25 @@ with tab2:
       
 
 with tab3:
-  st.header("Carbon emissions")
   main_chart_3 = st.container(border=True)
   with main_chart_3:
     st.header("Carbon emissions")
     c = st.empty()
     with c.container():
-      print(wt_hist.head())
-      emissions_chart = TimeSeriesChartModule(c, wt_hist, 24 * 7, 'lbs/MWh', None, 'value')
+      carbon = ppl_net.copy().rename({'value': 'kWh',}, axis=1)
+      
+      carbon = carbon.join(wt_hist.rename({'value': 'carbon_intensity'},  axis=1))
+      carbon['value'] = carbon['kWh'] / 1000. * carbon['carbon_intensity']
+      print(carbon.head())
+      carbon = carbon[['value']]
+
+      # carbon['value'] = 
+      # costs['value'] = costs['value'] * costs['rate_usd_per_kwh']
+      # costs = costs[['timestamp', 'value']].set_index('timestamp')
+      # cost_chart = TimeSeriesChartModule(c, costs, 24, '$', None, 'value')
+      carbon_past, carbon_future = split_data(carbon, 1)
+      
+      emissions_chart = TimeSeriesChartModule(c, carbon_past, 24 * 4, 'lbs CO2', None, 'value')
     
   # fig = px.line(wt_hist, x='timestamp', y='value', labels={'value': 'lbs/MWh'}, title='Marginal carbon emissions over the last month')
 
@@ -212,6 +225,8 @@ for i in range(len(ppl_future)):
   time.sleep(1)
   
   usage_chart.update_data(ppl_future.iloc[i:i+1])
+  cost_chart.update_data(costs_future.iloc[i:i+1])
+  emissions_chart.update_data(carbon_future.iloc[i:i+1])
 # Load data
 # df = pd.read_csv('data/movies_genres_summary.csv')
 # df.year = df.year.astype('int')
