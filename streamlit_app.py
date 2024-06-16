@@ -102,6 +102,17 @@ def split_data(data, days_back):
   future = data[data.index >= today]
   return past, future
 
+
+def calculate_comparison(data):
+  sum_24h = data['value'].tail(24).sum()
+  sum_7d_lag = data['value'].tail(24*8).head(24).sum()
+  sum_48h = data['value'].tail(48).head(24).sum()
+  sum_8d_lag = data['value'].tail(24*9).head(24).sum()
+  delta_today = sum_24h - sum_7d_lag
+  delta_yesterday = sum_48h - sum_8d_lag
+  return sum_24h, delta_today, sum_48h, delta_yesterday
+
+
 with tab1:
   ppl_past, ppl_future = split_data(ppl_net, 1)
   
@@ -115,8 +126,23 @@ with tab1:
     with c.container():
     
       usage_chart = TimeSeriesChartModule(c, ppl_past, 24 * 4, 'kWh', None, 'value')
-      
+  
+  col1, col2 = st.columns(2)
+  sum_24h, delta_today, sum_48h, delta_yesterday = calculate_comparison(ppl_past, )  
 
+  
+  with col1:
+    with st.container(border=True):
+      st.subheader("Today")
+      
+      
+      st.metric(label="Usage for last 24h", value=f"{sum_24h:.2f} kWh", delta=f"{delta_today:.2f} kWh relative to last week", label_visibility='collapsed', delta_color="inverse")
+  with col2:
+    with st.container(border=True):
+      st.subheader("Yesterday")
+      
+      st.metric(label="# **Yesterday**", value=f"{sum_48h:.2f} kWh", delta=f"{delta_yesterday:.2f} kWh relative to last week", label_visibility='collapsed', delta_color="inverse")
+      
 
 
 with tab2:
@@ -137,26 +163,21 @@ with tab2:
       costs_past, costs_future = split_data(costs, 1)
       cost_chart = TimeSeriesChartModule(c, costs_past, 24 * 4, '$', None, 'value')
     
-  col1, col2, col3 = st.columns(3)
-  
+  col1, col2 = st.columns(2)
+  sum_24h, delta_today, sum_48h, delta_yesterday = calculate_comparison(costs, )  
 
+  
   with col1:
     with st.container(border=True):
       st.subheader("Today")
       
-      # Calculate the total cost for the last 24 hours only
-      cost_24h = costs['value'].tail(24).sum()
-      cost_7d_lag = costs['value'].tail(24*8).head(24).sum()
-      cost_48h = costs['value'].tail(48).head(24).sum()
-      cost_8d_lag = costs['value'].tail(24*9).head(24).sum()
-      delta = cost_24h - cost_48h
       
-      st.metric(label="Cost for last 24h", value=f"${cost_24h:.2f}", delta=f"${delta:.2f} relative to last week", label_visibility='collapsed', delta_color="inverse")
+      st.metric(label="Cost for last 24h", value=f"${sum_24h:.2f}", delta=f"${delta_today:.2f} relative to last week", label_visibility='collapsed', delta_color="inverse")
   with col2:
     with st.container(border=True):
       st.subheader("Yesterday")
-      delta = cost_48h - cost_8d_lag
-      st.metric(label="# **Yesterday**", value=f"${cost_48h:.2f}", delta=f"${delta:.2f} relative to last week", label_visibility='collapsed', delta_color="inverse")
+      
+      st.metric(label="# **Yesterday**", value=f"${sum_48h:.2f}", delta=f"${delta_yesterday:.2f} relative to last week", label_visibility='collapsed', delta_color="inverse")
       
       
 
@@ -185,6 +206,22 @@ with tab3:
 
   # # Display the figure in Streamlit
   # st.plotly_chart(fig, use_container_width=False)
+
+  col1, col2 = st.columns(2)
+  sum_24h, delta_today, sum_48h, delta_yesterday = calculate_comparison(carbon_past, )  
+
+  
+  with col1:
+    with st.container(border=True):
+      st.subheader("Today")
+      
+      
+      st.metric(label="Carbon emissions for last 24h", value=f"{sum_24h:.2f} lb CO2", delta=f"{delta_today:.2f} lb CO2 relative to last week", label_visibility='collapsed', delta_color="inverse")
+  with col2:
+    with st.container(border=True):
+      st.subheader("Yesterday")
+      
+      st.metric(label="# **Yesterday**", value=f"{sum_48h:.2f} lb CO2", delta=f"{delta_yesterday:.2f} lb CO2 relative to last week", label_visibility='collapsed', delta_color="inverse")
 
 
 alerts = st.container(border=True)
