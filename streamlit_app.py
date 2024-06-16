@@ -3,6 +3,7 @@ import datetime
 import streamlit as st
 import numpy as np
 import scipy
+from statsmodels.tsa.arima.model import ARIMA
 import pandas as pd
 import altair as alt
 import plotly.express as px
@@ -26,8 +27,6 @@ with st.expander('About this app'):
   
 st.subheader('When is the best time to save electricity?')
 
-# year_selection = st.slider()'Select year duration', 1986, 2024, (2000, 2024))
-
 ppl_net = (
   pd.read_csv('data/consumed.csv')
 )
@@ -35,7 +34,32 @@ ppl_net['timestamp'] = pd.to_datetime(
   ppl_net['date'].astype(str).str.slice(stop=10) + ' ' + ppl_net['time'].astype(str).str.slice(stop=8))
 ppl_net = ppl_net[['timestamp', 'kWh']]
 
+
+
+# Generate a forecast of the time series data in `ppl_net` using the ARIMA model
+forecast = ARIMA(ppl_net['kWh'], order=(5, 1, 0)).fit()
+
+
+forecast_data = forecast.predict(start=0, end=4 * 24 * 90, typ='levels')
+forecast_data = pd.DataFrame(
+  {
+    'kWh': forecast_data.values,
+    'timestamp': pd.date_range( 
+      start=ppl_net.timestamp.iloc[-1] + pd.Timedelta('15min'),
+      periods=len(forecast_data),
+      freq='15min')
+  }
+)
+forecast_data.to_csv('data/forecast.csv', index=False)
+
 # ppl_net = ppl_net[ppl_net.timestamp > today datetime.datetime(2024, 4, 1)]
+
+
+# Create a class definition of a TimeSeriesChartModule, which is used to create a plotly express line chart and attach it to a st.container.
+# class TimeSeriesChartModule:
+#     def __init__(self, data, x, y, title, labels):
+#         self.data = data
+
 
 
 current_date = pd.Timestamp.now()
@@ -52,14 +76,10 @@ peak_rows = ppl_net_last_month.iloc[ppl_peaks]
 # 
 # ppl_net_last_month['rolling_sum_4'] = ppl_net_last_month['kWh'].rolling(window=4).sum()
 
-print(ppl_net_last_month.head())
-print(ppl_net.head())
-
 # ppl_net['date'] = pd.to_datetime(ppl_net[['date', 'time']])
 # ppl_editor = st.data_editor(ppl_net_last_month)
 
-print(st.secrets)
-print(st.secrets['WATTTIME_USER'])
+
 
 wt_hist = WattTimeHistorical(
 
@@ -70,7 +90,7 @@ wt_hist = WattTimeHistorical(
   region='CAISO_NORTH',
 
   signal_type='co2_moer', ).set_index('point_time').resample('15min').max().reset_index()
-print(wt_hist.head())
+
 
 
 tab1, tab2, tab3 = st.tabs(["⚡️Usage", "💰Costs", "🔥Carbon"])
@@ -87,33 +107,71 @@ electricity_rates_df = pd.DataFrame({
     "rate_usd_per_kwh": rates
 })
 
-print(electricity_rates_df)
+
+
+from util.charting import TimeSeriesChartModule 
 
 with tab1:
-  st.header("Usage")
-  ppl_chart = alt.Chart(ppl_net_last_month).mark_line().encode(
-    x=alt.X('timestamp:T', title='date', axis=alt.Axis(format='%B-%d %I %p')),
-    y=alt.Y('kWh:Q', title='kWh')
-  ).properties(width=800, height=400, title='Electricity usage over the last month')
-  annotations = peak_rows
+  main_chart_1 = st.container(border=True)
+  with main_chart_1:
+    st.header("Usage")
+    usage_chart = TimeSeriesChartModule(ppl_net_last_month, 'timestamp', 'kWh', main_chart_1)
+
+
+  # Create the line chart using Plotly Express
+  # fig = px.line(ppl_net_last_month, x='timestamp', y='kWh', title='Electricity usage over the last month', labels={'timestamp': 'Date', 'kWh': 'kWh'})
+  
+  # Customize the chart's appearance
+  # fig.update_layout(xaxis_title='Date', yaxis_title='kWh', width=800, height=400)
+  # fig.update_xaxes(tickformat='%B-%d %I %p')
+
+  # Add circular tooltips for peaks using plotly express
+  # fig.add_trace(px.scatter(peak_rows, x='timestamp', y='kWh', text='kWh', hover_data=['timestamp', 'kWh'],).data[0])
+  # fig.update_traces(marker=dict(size=5, line=dict(width=2, )), selector=dict(mode='markers'))
+
+  # Add new point to the chart and update in real time
+  # new_point = pd.DataFrame({'timestamp': [pd.Timestamp.now()], 'kWh': forecast_data[-1]})
+  # fig.add_trace(px.scatter(new_point, x='timestamp', y='kWh', text='kWh', hover_data=['timestamp', 'kWh'],).data[0])
+  # fig.update_traces(marker=dict(size=5, line=dict(width=2, )), selector=dict(mode='markers'))
+
+  # add another line chart to the chart, with forecast_data
+    # print(forecast_data.tail())
+  # fig.add_trace(px.line(forecast_data, x='timestamp', y='kWh', title='Electricity usage over the last month', labels={'timestamp': 'Date', 'kWh': 'kWh'}).data[0]).update_traces(line=dict(color='red', dash='dot'))
+  
+  
+  
+  # Add annotations for peaks
+  # for index, row in peak_rows.iterrows():
+  #     fig.add_annotation(x=row['timestamp'], y=row['kWh'],
+  #                       text=str(row['kWh']),
+  #                       showarrow=True, arrowhead=1, ax=0, ay=-40,
+  #                       bgcolor="red", font=dict(color="white"))
+
+  # st.plotly_chart(fig, use_container_width=True)
+  
+  # ppl_chart = alt.Chart(ppl_net_last_month).mark_line().encode(
+  #   x=alt.X('timestamp:T', title='date', axis=alt.Axis(format='%B-%d %I %p')),
+  #   y=alt.Y('kWh:Q', title='kWh')
+  # ).properties(width=800, height=400, title='Electricity usage over the last month')
+  # annotations = peak_rows
     
-  # Annotations layer
-  text_annotations = alt.Chart(annotations).mark_point(
-     color='red',
-     size=100
-  ).encode(
-      x='timestamp:T',
-      y=alt.Y('kWh:Q', axis=alt.Axis(title='')),
-      tooltip=[alt.Tooltip('timestamp:T', title='time'), alt.Tooltip('kWh:Q', title='kWh')],
-      # text=alt.Text('kWh:Q')  # Display the kWh value as text
-  )
+  # # Annotations layer
+  # text_annotations = alt.Chart(annotations).mark_point(
+  #    color='red',
+  #    size=100
+  # ).encode(
+  #     x='timestamp:T',
+  #     y=alt.Y('kWh:Q', axis=alt.Axis(title='')),
+  #     tooltip=[alt.Tooltip('timestamp:T', title='time'), alt.Tooltip('kWh:Q', title='kWh')],
+  #     # text=alt.Text('kWh:Q')  # Display the kWh value as text
+  # )
   
-  # Combine the chart and the annotations
-  annotated_chart = ppl_chart + text_annotations
+  # # Combine the chart and the annotations
+  # annotated_chart = ppl_chart + text_annotations
 
 
   
-  st.altair_chart(annotated_chart, use_container_width=True)
+  # st.altair_chart(annotated_chart, use_container_width=True)
 
 
 
@@ -122,7 +180,7 @@ with tab2:
     st.header("Costs")
     costs = ppl_net_last_month.copy().set_index('timestamp').resample('h').sum().reset_index()
     costs['hour'] = costs['timestamp'].dt.hour
-    print(costs.head())
+    
     costs = costs.merge(electricity_rates_df, on='hour')
     costs['net_cost'] = costs['kWh'] * costs['rate_usd_per_kwh']
     
@@ -138,7 +196,7 @@ with tab2:
   with col1:
     with st.container(border=True):
       st.subheader("Today")
-      print(costs['kWh'].tail(24).sum())
+      
       
       
       # Calculate the total cost for the last 24 hours only
@@ -166,7 +224,12 @@ with tab3:
   st.plotly_chart(fig, use_container_width=False)
 
 
-
+alerts = st.container(border=True)
+with alerts:
+  st.header("Alerts")
+  st.info("You have saved 10% more energy than last month.")
+  st.warning("Your carbon emissions are 5% higher than last week.")
+  st.success("Your electricity costs are 15% lower than last week.")
 # Load data
 # df = pd.read_csv('data/movies_genres_summary.csv')
 # df.year = df.year.astype('int')
@@ -201,4 +264,3 @@ with tab3:
 #             ).properties(height=320)
 # st.altair_chart(chart, use_container_width=True)
 
-print(ppl_net['kWh'].tail(24 * 4).sum())
