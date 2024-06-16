@@ -18,15 +18,9 @@ st.set_page_config(
     layout="wide",
 )
  
-st.image('ecowatt_logo.webp', width=300)
-st.header('EcoWatt')
+st.image('ecowatt_logo_with_text.webp', width=300)
 st.subheader('An interactive dashboard to explore your home energy usage and emissions impact')
 
-with st.expander('About this app'):
-  st.markdown('**What can this app do?**')
-  st.info('This app shows the use of Pandas for data wrangling, Altair for chart creation and editable dataframe for data interaction.')
-  st.markdown('**How to use the app?**')
-  st.warning('To engage with the app, 1. Select genres of your interest in the drop-down selection box and then 2. Select the year duration from the slider widget. As a result, this should generate an updated editable DataFrame and line plot.')
   
 st.subheader('When is the best time to save electricity?')
 
@@ -78,18 +72,7 @@ first_day_last_month = (first_day_current_month - pd.DateOffset(months=1))
 # ppl_net_last_month = ppl_net[(ppl_net['timestamp'] >= first_day_last_month) & (ppl_net['timestamp'] < first_day_current_month)]
 ppl_peaks, _ = scipy.signal.find_peaks(ppl_net['value'], height=1, width=3)
 peak_rows = ppl_net.iloc[ppl_peaks]
-# print(ppl_peaks)
-# 
 
-# wt_hist = WattTimeHistorical(
-
-
-# ).get_historical_pandas(
-#   start=datetime.datetime.now() - datetime.timedelta(days=7),
-#   end=datetime.datetime.now(),
-#   region='CAISO_NORTH',
-
-#   signal_type='co2_moer', ).set_index('point_time').resample('15min').max().reset_index()
 
 wt_hist = pd.read_csv('data/emissions.csv', index_col='timestamp', parse_dates=True)
 
@@ -154,18 +137,9 @@ with tab2:
       costs_past, costs_future = split_data(costs, 1)
       cost_chart = TimeSeriesChartModule(c, costs_past, 24 * 4, '$', None, 'value')
     
-  #   costs = costs.merge(electricity_rates_df, on='hour')
-    
-    
-  #   fig = px.line(costs, x='timestamp', y='net_cost', labels={'net_cost': 'Cost'}, title='Electricity costs over the last month')
-
-  #   # format y-axis as currency
-  #   fig.update_layout(yaxis_tickformat='$,.2f')
-
-  #   # Display the figure in Streamlit
-  #   st.plotly_chart(fig, use_container_width=False)
   col1, col2, col3 = st.columns(3)
   
+
   with col1:
     with st.container(border=True):
       st.subheader("Today")
