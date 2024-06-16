@@ -5,7 +5,7 @@ import plotly.express as px
 from statsmodels.tsa.arima.model import ARIMA
 
 class TimeSeriesChartModule:
-    def __init__(self, container, initial_data, window_size, x_column=None, y_column='value'):
+    def __init__(self, container, initial_data, window_size, unit, x_column=None, y_column='value'):
         """
         Initializes the TimeSeriesChartModule with the initial data, column names, and an existing Streamlit container.
         
@@ -17,6 +17,7 @@ class TimeSeriesChartModule:
         """
         self.data = initial_data
         self.window_size = window_size
+        self.unit = unit
         self.x_column = x_column
         if self.x_column:
             self.dates = self.data[self.x_column]
@@ -37,7 +38,7 @@ class TimeSeriesChartModule:
         """
         # Generate the line chart
         self.fig = px.line(self.data.tail(self.window_size), x=self.data.tail(self.window_size).index, y=self.y_column)
-        self.fig.update_layout(xaxis_title=self.x_column, yaxis_title=self.y_column, width=800, height=400)
+        self.fig.update_layout(xaxis_title=self.x_column, yaxis_title=self.unit, width=800, height=400)
         self.fig.update_xaxes(tickformat='%B-%d %I %p')
         # Display the chart in the container
         with self.container:
@@ -87,6 +88,7 @@ class TimeSeriesChartModule:
         #     st.plotly_chart(self.fig, use_container_width=True)
 
 
+
     def update_data(self, new_data):
         """
         Updates the dataset with new data and refreshes the chart in place.
@@ -101,12 +103,14 @@ class TimeSeriesChartModule:
         # Ideally, you would update the plot with only new data points here.
         # Since Plotly Express does not support incremental updates directly,
         # the entire dataset is redrawn. For true incremental updates, consider using Plotly GO.
-
         # Re-generate the line chart with the updated dataset
         viz_data = self.data.tail(self.window_size)
         self.fig = px.line(viz_data, x=viz_data.index, y=self.y_column)
 
         self.compute_peaks()
+
+        self.fig.update_layout(xaxis_title=self.x_column, yaxis_title=self.unit, width=800, height=400)
+        self.fig.update_xaxes(tickformat='%b %d %I %p')
         
         # Re-display the chart in the container
         with self.container:
@@ -133,11 +137,10 @@ class TimeSeriesChartModule:
         for date, value in zip(peaks.index, peaks['value'] ):
             if date >= self.data.index[-self.window_size]:
                 self.fig.add_annotation(
-                    x=date, y=value, text=f'{value:.2f}', yshift=10,
-                    showarrow=True, arrowhead=1, bgcolor='magenta', arrowcolor="magenta"
+                    x=date, y=value, text=f'{value:.2f} {self.unit}', yshift=5,
+                    showarrow=True, arrowhead=1, bgcolor='red', arrowcolor="red"
                 )
-            
-        
-        # Re-display the chart with annotations in the container
+
+        # Re-display the chart  with annotations in the container
         # with self.container:
         #     st.plotly_chart(self.fig, use_container_width=True)

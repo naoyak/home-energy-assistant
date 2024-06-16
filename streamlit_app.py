@@ -124,7 +124,7 @@ with tab1:
 
     with c.container():
     
-      usage_chart = TimeSeriesChartModule(c, ppl_past, 24 * 4, None, 'value')
+      usage_chart = TimeSeriesChartModule(c, ppl_past, 24 * 4, 'kWh', None, 'value')
       # Add annotations for peaks
       # for index, row in peak_rows.iterrows():
       #     fig.add_annotation(x=row['timestamp'], y=row['kWh'],
