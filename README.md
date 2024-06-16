@@ -9,7 +9,7 @@ Save energy, money, and carbon emissions during peak periods of electricity usag
 
 ## Demo App
 
-[![Streamlit App](https://ecowatt.streamlit.app/)
+[Streamlit App](https://ecowatt.streamlit.app/)
 
 ## GitHub Codespaces
 
