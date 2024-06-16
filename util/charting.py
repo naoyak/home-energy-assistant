@@ -39,7 +39,7 @@ class TimeSeriesChartModule:
         # Generate the line chart
         self.fig = px.line(self.data.tail(self.window_size), x=self.data.tail(self.window_size).index, y=self.y_column)
         self.fig.update_layout(xaxis_title=self.x_column, yaxis_title=self.unit, width=800, height=400)
-        self.fig.update_xaxes(tickformat='%B-%d %I %p')
+        self.fig.update_xaxes(tickformat='%b %d %I %p')
         # Display the chart in the container
         with self.container:
             st.plotly_chart(self.fig, use_container_width=True)
