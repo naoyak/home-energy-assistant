@@ -1,20 +1,18 @@
-# 🎬 Movies Explorer
 
-What makes a successful movie? Which movie genre performs best at the box office?
+# 🥬 EcoWatt: Residential Energy Assistant
 
-These are some of the questions that may be answered by analyzing a large collection of movie data such as the one compiled from The Movie Database (TMDB). It serves as a valuable resource for investigating fundamental questions regarding their success with information on plot details, cast and crew composition, production budgets, box office revenues, etc.
+Save energy, money, and carbon emissions during peak periods of electricity usage!
 
-This data app shows a simple demonstration of an interactive data explorer that allow users to adjust parameter widgets and observe in real-time updates to data visualization.
+**EcoWatt** is a personal home energy assistant, giving you pointers throughout the day to adjust your power load.
+
+
 
 ## Demo App
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://interactive-data-explorer-template.streamlit.app/)
+[![Streamlit App](https://ecowatt.streamlit.app/)
 
 ## GitHub Codespaces
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/dataprofessor/movies-explorer?quickstart=1)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/naoyak/home-energy-assistant?quickstart=1)
 
-## Reference
-
-- [TMDB 5000 Movie Dataset](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata)
   
